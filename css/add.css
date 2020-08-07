@@ -1,0 +1,120 @@
+/* input {
+  width: 100%;
+  background-color: #f7f7f7;
+} */
+
+div {
+  width: 100%;
+}
+
+html, body {
+  height: 100%;
+  overflow: auto;
+  background-color: white;
+  /* overflow-y: scroll; */
+  /* margin: 0; */
+  /* padding-bottom: -50px; */
+  font-size: 12px;
+  /* border-style: solid;
+  border-width: 1px;
+  border-color: #e3e5e8;
+  border-radius: 10px; */
+  /* box-shadow: #c5c6c9; */
+  /* resize: none; */
+}
+/* 
+#top {
+  overflow-y: scroll;
+}
+
+#bottom {
+  overflow-y: hidden;
+} */
+
+/* .container-fluid { */
+  /* background-color: white; */
+  /* margin-top: px; */
+  /* height: 1vh; */
+  /* border-radius: 10px;
+  border-style: solid;
+  border-color: white; */
+  /* border-top-width: 0px ; */
+/* } */
+
+.btn-light, .btn-light:hover, .btn-light:focus, .btn-light:active {
+  background-color: #43b581;
+  border-color: transparent;
+  color: #fcfefd;
+  width: 100px;
+}
+
+.oneSize, .oneSize:focus, .oneSize:active{
+  /* width: calc(100vw - 20px); */
+  background-color: #e3e5e8;
+  resize: none;
+  height: 30px;
+  width: 91vw;
+  outline: none;
+  border-color: #e3e5e8;
+  margin:auto;
+  margin-top: -5px;
+  margin-bottom: 7px;
+  /* border-style: none; */
+  box-shadow: none;
+}
+
+#notes, #description {
+  background-color: #e3e5e8;
+  resize: vertical;
+  width: 91vw;
+  outline: none;
+  border-color: #e3e5e8;
+  margin:auto;
+  margin-top: -5px;
+  margin-bottom: 7px;
+  /* border-style: none; */
+  box-shadow: none;
+}
+
+#description {
+  height: 38vh;
+}
+
+.dropdown-divider {
+  width: 91vw;
+}
+
+/* label {
+  margin-left: 1px;
+} */
+
+.btn-dark {
+  background-color: #fafafa;
+  color: #7c8693;
+  border-color: transparent;
+  width: 100px;
+}
+
+.btn-dark:hover, .btn-dark:focus, .btn-dark:active {
+  color: #2e3338;
+  background-color: #f4f5f6;
+  border-color: transparent;
+  width: 100px;
+}
+
+::-webkit-scrollbar {
+  width: 0px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #dee2e6;
+  border-radius: 0px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #8ab4f8;
+}

@@ -1,0 +1,146 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="../css/add.css">
+    <title>Add Patient</title>
+</head>
+
+<body>
+    <div class="container-fluid" style="margin-top: 10px;">
+        <form>
+            <div class="row">
+                <div class="col-sm-12 col-md-12 col-lg-12">
+                    <div id="title" style="margin-bottom: 20px;">
+                        <h5>Add patient</h5>
+                    </div>
+                    <!-- <div class="dropdown-divider"></div> -->
+                    <div id="top">
+                        <div>
+                            <label>Name *</label>
+                        </div>
+                        <div>
+                            <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
+                                id="name" autofocus>
+                        </div>
+                        <div>
+                            <label>Phone number *</label>
+                        </div>
+                        <div>
+                            <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
+                                id="phone" autofocus>
+                        </div>
+                        <div>
+                            <label>Age</label>
+                        </div>
+                        <div>
+                            <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
+                                id="age" autofocus>
+                        </div>
+                        <div>
+                            <label>Complaint</label>
+                        </div>
+                        <div>
+                            <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
+                                id="complaint" autofocus>
+                        </div>
+                        <div>
+                            <label>Medical history</label>
+                        </div>
+                        <div>
+                            <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
+                                id="medicalHistory" autofocus>
+                        </div>
+                        <div>
+                            <label>Dental History</label>
+                        </div>
+                        <div>
+                            <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
+                                id="dentalHistory" autofocus>
+                        </div>
+                        <div>
+                            <label>Notes</label>
+                        </div>
+                        <div>
+                            <textarea class="form-control" id="notes" autofocus></textarea>
+                        </div>
+                        <div class="dropdown-divider"></div>
+                    </div>
+                    <div id="bottom">
+                        <button type="submit" class="btn btn-light">Confirm</button>
+                        <button type="button" onclick="cancel()" class="btn btn-dark">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+        </form>
+    </div>
+    <script>
+        const electron = require('electron');
+        const { ipcRenderer } = electron;
+        const { v4: uuidv4 } = require('uuid');
+        var patient;
+
+        document.querySelector('form').addEventListener('submit', submitForm);
+
+        ipcRenderer.on('patient:edit', (e, selected) => {
+            // console.log(selected)
+            patient = selected;
+            document.querySelector('#name').value = patient.name;
+            document.querySelector('#phone').value = patient.phone;
+            document.querySelector('#age').value = patient.age;
+            document.querySelector('#complaint').value = patient.complaint;
+            document.querySelector('#medicalHistory').value = patient.medicalHistory;
+            document.querySelector('#dentalHistory').value = patient.dentalHistory;
+            document.querySelector('#notes').value = patient.notes;
+        })
+
+        function cancel() {
+            window.close();
+            // console.log(typeof(uuidv4()));
+        }
+
+        function submitForm(e) {
+            e.preventDefault();
+            const name = document.querySelector('#name').value;
+            const phone = document.querySelector('#phone').value;
+            const age = document.querySelector('#age').value;
+            const complaint = document.querySelector('#complaint').value;
+            const medicalHistory = document.querySelector('#medicalHistory').value;
+            const dentalHistory = document.querySelector('#dentalHistory').value;
+            const notes = document.querySelector('#notes').value;
+            
+            var doc =
+            {
+                // "_id": id,
+                "name": name,
+                "phone": phone,
+                "age": age,
+                "complaint": complaint,
+                "medicalHistory": medicalHistory,
+                "dentalHistory": dentalHistory,
+                "notes": notes,
+                // "visits": visits
+            }
+            if (patient == null) {
+                doc.visits = [];
+                doc._id = uuidv4();
+            }
+            else {
+                doc.visits = patient.visits
+                doc._id = patient._id
+                doc._rev = patient._rev
+            }
+            ipcRenderer.send('patient:added', doc, patient == null);
+        }
+    </script>
+    <script>
+        window.jQuery = window.$ = require('jquery');
+    </script>
+    <script src="../js/popper.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
+</body>
+
+</html>
