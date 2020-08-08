@@ -1,5 +1,5 @@
-2020/08/07-16:50:40.278 3ff4 Recovering log #1618
-2020/08/07-16:50:40.278 3ff4 Level-0 table #1621: started
-2020/08/07-16:50:40.284 3ff4 Level-0 table #1621: 237 bytes OK
-2020/08/07-16:50:40.292 3ff4 Delete type=0 #1618
-2020/08/07-16:50:40.292 3ff4 Delete type=3 #1616
+2020/08/08-02:30:26.777 6ba8 Recovering log #2263
+2020/08/08-02:30:26.777 6ba8 Level-0 table #2266: started
+2020/08/08-02:30:26.786 6ba8 Level-0 table #2266: 797 bytes OK
+2020/08/08-02:30:26.796 6ba8 Delete type=0 #2263
+2020/08/08-02:30:26.796 6ba8 Delete type=3 #2261

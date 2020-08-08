@@ -43,7 +43,7 @@
                             </th>
                         </tr>
                     </thead>
-                    <tbody></tbody>
+                    <tbody id="tbody"></tbody>
                 </table>
             </div>
             <div id="rightPanel" class="col-sm-9 col-md-9 col-lg-9">
@@ -86,47 +86,53 @@
         const { ipcRenderer } = require('electron');
         const { dialog } = require('electron').remote
         const customTitlebar = require('custom-electron-titlebar');
+        var PouchDB = require("pouchdb");
+        PouchDB.plugin(require('pouchdb-find'));
+
+        let db;
 
         new customTitlebar.Titlebar({
             backgroundColor: customTitlebar.Color.fromHex('#e3e5e8'),
             overflow: 'hidden',
             titleHorizontalAlignment: 'center',
-            // shadow: true,
-            // icon: 'assets\icons\win\icon.ico'
         });
-        // var PouchDB = require("pouchdb");
 
-        // const { webContents } = electron;
         const table = document.querySelector('#myTable');
         const right = document.querySelector('#rightPanel');
         const visitDiv = document.querySelector('#visitDiv')
         const formatter = new Intl.DateTimeFormat('en-us', {
-            // weekday: 'short',
             year: 'numeric',
             month: 'short',
             day: 'numeric'
-            // hour: 'numeric',
-            // minute: 'numeric',
-            // second: 'numeric',
-            // fractionalSecondDigits: 3,
-            // hour12: true
-            // timeZone: 'UTC'
         });
 
-        var db;
         var selected;
 
-       
+        ipcRenderer.on('load', () => {
+            db = new PouchDB("patients");
+            db.createIndex({
+                index: { fields: ['name', '_id'] }
+            })
+            addTableRows()
+        })
+
+        function findWithAttr(array, attr, value) {
+            for (var i = 0; i < array.length; i += 1) {
+                if (array[i][attr] === value) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
 
         function search() {
-            // Declare variables
             var input, filter, myTable, tr, i, name, phone, nameValue, phoneValue;
             input = document.getElementById("search");
             filter = input.value.toUpperCase();
             myTable = document.getElementById("myTable");
             tr = table.getElementsByTagName("tr");
 
-            // Loop through all table rows, and hide those who don't match the search query
             for (i = 0; i < tr.length; i++) {
                 name = tr[i].getElementsByTagName("td")[0];
                 phone = tr[i].getElementsByTagName("td")[1];
@@ -142,54 +148,11 @@
             }
         }
 
-        // function loaded(e) {
-        //     alert("hello")
-        //     ipcRenderer.send('loaded');
-        // }
 
-        function addPatient(e) {
-            ipcRenderer.send('patient:add');
-        }
-
-        function editPatient(e) {
-            ipcRenderer.send('patient:add', selected - 1, db.docs[selected-1]);
-        }
-
-        function addVisit() {
-            if (selected == null) {
-                // alert('No patient selected!')
-                // console.log(dialog)
-                const options = {
-                    type: 'info',
-                    buttons: ['Ok'],
-                    defaultId: 0,
-                    title: 'No patient selected',
-                    message: 'Please select a patient!'
-                    // detail: 'It does not really matter',
-                    // checkboxLabel: 'Remember my answer',
-                    // checkboxChecked: true,
-                };
-
-                dialog.showMessageBox(null, options, (response) => {
-                    console.log(response);
-                    // console.log(checkboxChecked);
-                });
-            }
-            else {
-                ipcRenderer.send('visit:add', selected - 1, db.docs[selected-1]);
-            }
-        }
-
-        function editVisit(e) {
-            var divs = visitDiv.querySelectorAll('.hoverable')
-            var divsArray = Array.from(divs);
-            index = divsArray.findIndex(div => div.contains(event.target));
-            ipcRenderer.send('visit:add', selected - 1, db.docs[selected-1], db.docs[selected-1].visits[index])
-        }
-
-        ipcRenderer.on('table:add', (e, doc) => {
-            const tbody = document.querySelector('tbody');
+        function creatTableRow(doc) {
             const tr = document.createElement('tr');
+            console.log(doc._id)
+            tr.id = doc._id
             const td = document.createElement('td');
             const tdName = document.createElement('h5');
             const tdPhone = document.createElement('h6');
@@ -198,48 +161,6 @@
             const itemPhone = document.createTextNode(doc.phone);
             const x = document.createTextNode('x')
             const btn = document.createElement('button')
-            // visits = doc.visits
-            // visits.sort(function (a, b) { return b.date - a.date });
-            // console.log(visits)
-            // var totalDue = 0;
-            // visits.forEach(visit => {
-            //     const div = document.createElement('div')
-            //     div.classList.add('hoverable')
-            //     div.id = visit._id
-            //     const dl = document.createElement('dl')
-            //     const dt = document.createElement('dt')
-
-
-            //     dt.innerHTML = formatter.format(new Date(visit.date))
-
-
-            //     const description = document.createElement('dd')
-            //     const cost = document.createElement('dd')
-            //     const paid = document.createElement('dd')
-            //     const due = document.createElement('dd')
-            //     // console.log(visit.date)
-            //     description.innerHTML = visit.description
-            //     cost.innerHTML = "Cost: <b>" + visit.cost + "</b>"
-            //     paid.innerHTML = "Paid: <b>" + visit.paid + "</b>"
-            //     due.innerHTML = "Due: <b>" + visit.due + "</b>"
-            //     dl.appendChild(dt)
-            //     dl.appendChild(description)
-            //     dl.appendChild(cost)
-            //     dl.appendChild(paid)
-            //     dl.appendChild(due)
-            //     div.appendChild(dl)
-            //     div.addEventListener('click', visitClick)
-            //     visitDiv.appendChild(div)
-            //     // <div class="dropdown-divider"></div>
-            // divider = document.createElement('div')
-            // divider.classList.add('divider')
-            // visitDiv.appendChild(divider)
-            //     totalDue += visit.due
-            // });
-            // // console.log(totalDue)
-            // document.querySelector("#dueTotal").innerHTML = totalDue
-
-            // btn.appendChild(x)
             btn.classList.add('x')
             tdx.appendChild(btn)
             btn.addEventListener('click', deletePatient)
@@ -250,205 +171,249 @@
             td.appendChild(tdPhone)
             tr.appendChild(td);
             tr.appendChild(tdx);
-            td.addEventListener('click', select);
-            // children = tbody.querySelectorAll('tr')
-            // // console.log(children)
-            // // let child;
-            // // console.log(children)
-            // if (children.length == 0) {
-            //     // console.log(0)
-            //     tbody.appendChild(tr)
-            // }
-            // // console.log(children.length)
-            // for (j = 0; j < children.length; j++) {
-            //     // console.log(j)
+            td.addEventListener('click', select)
 
-            //     child = children[j]
-            //     // console.log((child.childNodes[0].childNodes[0].innerHTML).toLowerCase())
-            //     // console.log((doc.name).toLowerCase())
-            //     // console.log(child)
-            //     // console.log((doc.name).toLowerCase() < (child.childNodes[0].childNodes[0].innerHTML).toLowerCase())
-            //     if ((doc.name).toLowerCase() < (child.childNodes[0].childNodes[0].innerHTML).toLowerCase()) {
-            //         child.parentNode.insertBefore(tr, child);
-            //         break
-            //     }
-            // }
-            tbody.appendChild(tr);
-            table.appendChild(tbody);
-        })
-
-        function visitClick(e) {
-            // ipcRenderer.send()
-            var divs = visitDiv.querySelectorAll('.hoverable')
-            var divsArray = Array.from(divs);
-            index = divsArray.findIndex(div => div.contains(event.target));
-            // console.log(rows[index])
-            // document.querySelector('tbody').removeChild((event.target).parentNode.parentNode)
-            // rows[index].parentNode.removeChild(rows[index])
-            // patient = db.rows[selected - 1].doc;
-            // (event.target).parentNode.parentNode.removeChild((event.target).parentNode)
-            toDelete = db.docs[selected - 1].visits[index];
-            // console.log(toDelete)
-            ipcRenderer.send('visit:delete', selected - 1, index);
+            return tr
         }
 
-        // ipcRenderer.on("visitList:add", (e, visit) => {
-        //     visitAdded()
-        //     // visitDiv.childNodes.sort(function (a, b) { return Date.parse(b.childNodes[0].childNodes[0].innerHTML) - Date.parse(a.childNodes[0].childNodes[0].innerHTML) });
-        // })
-
         function visitAdded(visit) {
-            const div = document.createElement('div')
-            div.classList.add('hoverable')
-            div.id = visit._id
-            const dl = document.createElement('dl')
-            const dt = document.createElement('dt')
-            dt.innerHTML = formatter.format(new Date(visit.date))
-            const description = document.createElement('dd')
-            const cost = document.createElement('dd')
-            const paid = document.createElement('dd')
-            const due = document.createElement('dd')
-            // console.log(visit.date)
-            description.innerHTML = visit.description
-            cost.innerHTML = "Cost: <b>" + visit.cost + "</b>"
-            paid.innerHTML = "Paid: <b>" + visit.paid + "</b>"
-            due.innerHTML = "Due: <b>" + visit.due + "</b>"
-            deleteBtn = document.createElement('button')
-            deleteBtn.addEventListener('click', visitClick)
-            dl.appendChild(dt)
-            div.appendChild(deleteBtn)
-            dl.appendChild(description)
-            dl.appendChild(cost)
-            dl.appendChild(paid)
-            dl.appendChild(due)
-            div.appendChild(dl)
-            dl.addEventListener('click', editVisit)
-            visitDiv.appendChild(div)
-            divider = document.createElement('div')
-            divider.classList.add('divider')
-            visitDiv.appendChild(divider)
-            // console.log(typeof(visitDiv.children))
-            // children = visitDiv.querySelectorAll('.hoverable')
-            // console.log(children)
-            // let child;
-            // if (children.length == 0) {
-            //     visitDiv.appendChild(div)
-            // }
-            // for (i = 0; i < children.length; i++) {
-            //     child = children[i]
-            // console.log([visit.date > Date.parse(child.childNodes[0].childNodes[0].innerHTML)])
-            //     if (visit.date > Date.parse(child.childNodes[0].childNodes[0].innerHTML)) {
-            //         child.parentNode.insertBefore(div, child);
-            //         break
-            //     }
-            // }
-            // visitDiv.appendChild(div)
-            // dueTotal = document.querySelector("#dueTotal")
-            // dueTotal.innerHTML = parseFloat(dueTotal.innerHTML) + visit.due
+            try {
+                const div = document.createElement('div')
+                div.classList.add('hoverable')
+                div.id = visit._id
+                const dl = document.createElement('dl')
+                const dt = document.createElement('dt')
+                dt.innerHTML = formatter.format(new Date(visit.date))
+                const description = document.createElement('dd')
+                const cost = document.createElement('dd')
+                const paid = document.createElement('dd')
+                const due = document.createElement('dd')
+                description.innerHTML = visit.description
+                cost.innerHTML = "Cost: <b>" + visit.cost + "</b>"
+                paid.innerHTML = "Paid: <b>" + visit.paid + "</b>"
+                due.innerHTML = "Due: <b>" + visit.due + "</b>"
+                deleteBtn = document.createElement('button')
+                deleteBtn.addEventListener('click', visitClick)
+                dl.appendChild(dt)
+                div.appendChild(deleteBtn)
+                dl.appendChild(description)
+                dl.appendChild(cost)
+                dl.appendChild(paid)
+                dl.appendChild(due)
+                div.appendChild(dl)
+                dl.addEventListener('click', editVisit)
+                visitDiv.appendChild(div)
+                divider = document.createElement('div')
+                divider.classList.add('divider')
+                visitDiv.appendChild(divider)
+
+            } catch (error) {
+                console.log(error)
+
+            }
             return visit.due
         }
 
-        function deletePatient() {
-            var table = document.querySelector("#myTable");
-            var rows = document.querySelectorAll("tr");
-            var rowsArray = Array.from(rows);
 
-            index = rowsArray.findIndex(row => row.contains(event.target));
-
-            // console.log(rows[index])
-            // document.querySelector('tbody').removeChild((event.target).parentNode.parentNode)
-            // (event.target).parentNode.parentNode.parentNode.removeChild((event.target).parentNode.parentNode)
-            // rows[index].parentNode.removeChild(rows[index])
-            toDelete = db.docs[index - 1];
-            // console.log(toDelete)
-            // console.log(selected)
-            if (selected == index) {
-                selected -= 1
-                // console.log(selected)
-            }
-            select()
-            ipcRenderer.send('patient:delete', toDelete);
+        async function addTableRows() {
+            const tbody = document.querySelector('#tbody');
+            await db.find({
+                selector: {
+                    name: { $gte: null }
+                },
+                sort: ['name'],
+            }).then(result => {
+                result.docs.forEach(doc => {
+                    tr = creatTableRow(doc)
+                    tbody.appendChild(tr)
+                });
+            })
         }
 
-        ipcRenderer.on('db:send', (e, _db, selection) => {
-            // rows
-            // _db.rows.sort(function (a, b) {
-            //     var x = a.doc.name.toLowerCase();
-            //     var y = b.doc.name.toLowerCase();
-            //     if (x < y) { return -1; }
-            //     if (x > y) { return 1; }
-            //     return 0;
-            // });
-            db = _db
-            // console.log(selection)
-            selected = selection
-            // showSelected(selection)
-            select()
-            // alert("marwan")
+        function addPatient(e) {
+            ipcRenderer.send('patient:add');
+        }
+
+        ipcRenderer.on('patient:add', (e, doc) => {
+            db.put(doc, function (err, response) {
+                if (err) {
+                } else {
+                    if (document.getElementById(doc._id) == null) {
+                        db.find({
+                            selector: {
+                                name: { $gte: null }
+                            },
+                            sort: ['name'],
+                        }).then(result => {
+                            index = findWithAttr(result.docs, '_id', doc._id)
+                            console.log(index)
+                            try {
+                                row = document.getElementById(result.docs[index - 1]._id)
+                                row.after(creatTableRow(doc))
+                            } catch (error) {
+                                row = document.getElementById(result.docs[index + 1]._id)
+                                row.parentNode.insertBefore(creatTableRow(doc), row)
+                            }
+
+                        })
+                    }
+                    else {
+                        select(null, document.getElementById(doc._id))
+                    }
+                }
+            })
         })
 
-        function select(e) {
-            var table = document.querySelector("#myTable");
+        async function deletePatient() {
+            row = event.target.parentNode.parentNode
+            id = row.id
+            row.remove()
+            try {
+                await db.get(id).then(doc => {
+                    return db.remove(doc);
+                });
+            } catch (error) {
+            }
+        }
+
+        async function editPatient(e) {
+            await db.find({
+                selector: {
+                    _id: selected
+                }
+            }).then(result => {
+                doc = result.docs[0]
+                ipcRenderer.send('patient:add', doc);
+            })
+        }
+
+        async function addVisit() {
+            if (selected == null) {
+                const options = {
+                    type: 'info',
+                    buttons: ['Ok'],
+                    defaultId: 0,
+                    title: 'No patient selected',
+                    message: 'Please select a patient!'
+                };
+
+                dialog.showMessageBox(null, options, (response) => {
+                    console.log(response);
+                });
+            }
+            else {
+                await db.find({
+                    selector: {
+                        _id: selected
+                    }
+                }).then(result => {
+                    doc = result.docs[0]
+                    ipcRenderer.send('visit:add', doc);
+                })
+            }
+        }
+
+        ipcRenderer.on('visit:add', (e, doc) => {
+            db.put(doc, function (err, response) {
+                if (err) {
+                } else {
+                    select(null, document.getElementById(doc._id))
+                }
+            })
+        })
+
+        async function editVisit(e) {
+            var divs = visitDiv.querySelectorAll('.hoverable')
+            var divsArray = Array.from(divs);
+            div = divsArray.filter(div => div.contains(event.target))[0];
+            await db.find({
+                selector: {
+                    _id: selected
+                }
+            }).then(result => {
+
+                doc = result.docs[0]
+                visit = doc.visits.find(visit => { return visit._id == div.id })
+                console.log(visit)
+                ipcRenderer.send('visit:add', doc, visit);
+            })
+        }
+
+
+
+        async function visitClick(e) {
+            row = event.target.parentNode
+            id = row.id
+            row.remove()
+
+            try {
+                await db.find({
+                    selector: {
+                        _id: selected
+                    }
+                }).then(result => {
+                    visits = result.docs[0].visits
+                    index = findWithAttr(visits, '_id', id)
+                    result.docs[0].visits.splice(index, 1)
+                    db.put(result.docs[0], (err, response) => {
+                        if (err) {
+                            return console.log(err);
+                        } else {
+                            select(null, document.getElementById(result.docs[0]._id))
+                        }
+                    });
+                });
+            } catch (error) {
+            }
+        }
+
+
+        function select(e, row) {
             var rows = document.querySelectorAll("tr");
             var rowsArray = Array.from(rows);
             try {
-                rows[selected].classList.remove("selected");
-                selected = rowsArray.findIndex(row => row.contains(event.target));
+                table.querySelector('.selected').classList.remove('selected');
             } catch (error) { }
-            console.log(selected)
-            rows[selected].classList.add("selected");
-            // console.log(selected)
-            // ipcRenderer.send('patient:select', selected - 1);
-            // console.log(selected)
-            showSelected(selected - 1)
-        }
-
-        // function getTableIndex(target) {
-        //     const rows = lab.querySelectorAll('tr');
-        //     const rowsArray = Array.from(rows);
-        //     const rowIndex = rowsArray.findIndex(row => row.contains(target));
-        //     const columnIndex = target.parentElement.cellIndex;
-        //     // console.log(rowIndex, "AND", columnIndex);
-        //     return [rowIndex, columnIndex, target.value];
-        // }
-
-        function showSelected(index) {
-            try {
-                // console.log(db.rows[0])
-                doc = db.docs[index]
-                document.querySelector('#name').innerHTML = doc.name;
-                document.querySelector('#age').innerHTML = doc.age;
-                document.querySelector('#phone').innerHTML = doc.phone;
-                document.querySelector('#complaint').innerHTML = doc.complaint;
-                document.querySelector('#medical').innerHTML = doc.medicalHistory;
-                document.querySelector('#dental').innerHTML = doc.dentalHistory;
-                document.querySelector('#notes').innerHTML = doc.notes;
-                document.querySelector('#visitDiv').innerHTML = ''
-                // console.log(doc.visits)
-                totalDue = 0
-                doc.visits.forEach(visit => {
-                    // console.log(visit)
-                    totalDue += visitAdded(visit)
-                });
-                dueTotal = document.querySelector("#dueTotal")
-                dueTotal.innerHTML = totalDue
-            } catch (error) {
-                // console.log(error)
+            if (row == null) {
+                selectedRow = rowsArray.filter(row => row.contains(event.target))[0]
             }
-
-            // lab.querySelectorAll('tr').forEach(row => {
-            //     row.querySelectorAll('td').forEach(cell => {
-            //         try {
-            //             var inp = cell.querySelector('input');
-            //             var coor = getTableIndex(inp);
-            //             inp.value = doc.labResults[coor[0]][coor[1]];
-            //         } catch (error) { }
-            //     })
-            // });
+            selectedRow.classList.add('selected')
+            selected = selectedRow.id
+            showSelected(selectedRow.id)
         }
+
+
+        async function showSelected(id) {
+            try {
+                await db.find({
+                    selector: {
+                        _id: id
+                    }
+                }).then(result => {
+                    doc = result.docs[0]
+                    document.querySelector('#name').innerHTML = doc.name;
+                    document.querySelector('#age').innerHTML = doc.age;
+                    document.querySelector('#phone').innerHTML = doc.phone;
+                    document.querySelector('#complaint').innerHTML = doc.complaint;
+                    document.querySelector('#medical').innerHTML = doc.medicalHistory;
+                    document.querySelector('#dental').innerHTML = doc.dentalHistory;
+                    document.querySelector('#notes').innerHTML = doc.notes;
+                    document.querySelector('#visitDiv').innerHTML = ''
+                    totalDue = 0
+                    doc.visits.forEach(visit => {
+                        try {
+                            totalDue += visitAdded(visit)
+                        } catch (error) { totalDue += 0 }
+
+                    });
+                    dueTotal = document.querySelector("#dueTotal")
+                    dueTotal.innerHTML = totalDue
+                })
+            } catch (error) {
+            }
+        }
+
     </script>
-    <!-- <script src="../js/jquery-3.2.1.slim.min.js"></script>
-     -->
     <script>
         window.jQuery = window.$ = require('jquery');
     </script>

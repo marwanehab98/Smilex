@@ -16,7 +16,6 @@
                     <div id="title" style="margin-bottom: 20px;">
                         <h5>Add patient</h5>
                     </div>
-                    <!-- <div class="dropdown-divider"></div> -->
                     <div id="top">
                         <div>
                             <label>Name *</label>
@@ -86,7 +85,6 @@
         document.querySelector('form').addEventListener('submit', submitForm);
 
         ipcRenderer.on('patient:edit', (e, selected) => {
-            // console.log(selected)
             patient = selected;
             document.querySelector('#name').value = patient.name;
             document.querySelector('#phone').value = patient.phone;
@@ -99,7 +97,6 @@
 
         function cancel() {
             window.close();
-            // console.log(typeof(uuidv4()));
         }
 
         function submitForm(e) {
@@ -114,7 +111,6 @@
             
             var doc =
             {
-                // "_id": id,
                 "name": name,
                 "phone": phone,
                 "age": age,
@@ -122,7 +118,6 @@
                 "medicalHistory": medicalHistory,
                 "dentalHistory": dentalHistory,
                 "notes": notes,
-                // "visits": visits
             }
             if (patient == null) {
                 doc.visits = [];
@@ -133,7 +128,7 @@
                 doc._id = patient._id
                 doc._rev = patient._rev
             }
-            ipcRenderer.send('patient:added', doc, patient == null);
+            ipcRenderer.send('patient:added', doc);
         }
     </script>
     <script>
