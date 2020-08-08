@@ -32,11 +32,11 @@
                                 id="phone" autofocus>
                         </div>
                         <div>
-                            <label>Age</label>
+                            <label>Date of birth</label>
                         </div>
                         <div>
                             <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
-                                id="age" autofocus>
+                                id="age" placeholder="dd-mm-yyyy" autofocus>
                         </div>
                         <div>
                             <label>Complaint</label>
@@ -80,15 +80,25 @@
         const electron = require('electron');
         const { ipcRenderer } = electron;
         const { v4: uuidv4 } = require('uuid');
+        const { dialog } = require('electron').remote
+
         var patient;
 
         document.querySelector('form').addEventListener('submit', submitForm);
 
         ipcRenderer.on('patient:edit', (e, selected) => {
             patient = selected;
+            const formatter = new Intl.DateTimeFormat('en-us', {
+                day: 'numeric',
+                month: 'numeric',
+                year: 'numeric'
+            });
+            d = formatter.format(new Date(patient.age)).split('/')
+            newD = [d[1], d[0], d[2]]
+            document.querySelector('#age').value = newD.join('/');
             document.querySelector('#name').value = patient.name;
             document.querySelector('#phone').value = patient.phone;
-            document.querySelector('#age').value = patient.age;
+
             document.querySelector('#complaint').value = patient.complaint;
             document.querySelector('#medicalHistory').value = patient.medicalHistory;
             document.querySelector('#dentalHistory').value = patient.dentalHistory;
@@ -101,34 +111,66 @@
 
         function submitForm(e) {
             e.preventDefault();
-            const name = document.querySelector('#name').value;
-            const phone = document.querySelector('#phone').value;
-            const age = document.querySelector('#age').value;
-            const complaint = document.querySelector('#complaint').value;
-            const medicalHistory = document.querySelector('#medicalHistory').value;
-            const dentalHistory = document.querySelector('#dentalHistory').value;
-            const notes = document.querySelector('#notes').value;
-            
-            var doc =
-            {
-                "name": name,
-                "phone": phone,
-                "age": age,
-                "complaint": complaint,
-                "medicalHistory": medicalHistory,
-                "dentalHistory": dentalHistory,
-                "notes": notes,
+            try {
+                const name = document.querySelector('#name').value;
+                if (name == '') throw 'emptyNameError';
+                const phone = document.querySelector('#phone').value;
+                if (phone == '' || phone.length < 11) throw 'emptyPhoneError'
+                dateString = document.querySelector('#age').value;
+                let separator = /[^0-9]+/;
+                dateArray = dateString.split(separator).reverse();
+                const date = Date.parse(dateArray.join('/'));
+                if (date == "Invalid Date" || isNaN(date) || date == null) {
+                    throw 'dateFormatError';
+                }
+                const complaint = document.querySelector('#complaint').value;
+                const medicalHistory = document.querySelector('#medicalHistory').value;
+                const dentalHistory = document.querySelector('#dentalHistory').value;
+                const notes = document.querySelector('#notes').value;
+
+                var doc =
+                {
+                    "name": name,
+                    "phone": phone,
+                    "age": date,
+                    "complaint": complaint,
+                    "medicalHistory": medicalHistory,
+                    "dentalHistory": dentalHistory,
+                    "notes": notes,
+                }
+                if (patient == null) {
+                    doc.visits = [];
+                    doc._id = uuidv4();
+                }
+                else {
+                    doc.visits = patient.visits
+                    doc._id = patient._id
+                    doc._rev = patient._rev
+                }
+                ipcRenderer.send('patient:added', doc);
+            } catch (error) {
+                if (error == 'dateFormatError') {
+                    title = 'Incorrect date format'
+                    message = 'Please check the format of the date of birth.'
+                }
+                else if (error == 'emptyNameError') {
+                    title = 'No name entered'
+                    message = 'Please enter the name of your patient.'
+                } else {
+                    title = 'Invalid phone number'
+                    message = 'Please check the phone number of your patient.'
+                }
+                const options = {
+                    type: 'warning',
+                    buttons: ['Ok'],
+                    defaultId: 0,
+                    title: title,
+                    message: message
+                };
+                dialog.showMessageBox(null, options, (response) => {
+                    return
+                });
             }
-            if (patient == null) {
-                doc.visits = [];
-                doc._id = uuidv4();
-            }
-            else {
-                doc.visits = patient.visits
-                doc._id = patient._id
-                doc._rev = patient._rev
-            }
-            ipcRenderer.send('patient:added', doc);
         }
     </script>
     <script>

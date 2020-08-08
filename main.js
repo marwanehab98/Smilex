@@ -32,7 +32,7 @@ app.whenReady().then(() => {
       slashes: true
     })
   );
-  console.log('marwan1')
+  // console.log('marwan1')
 
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.webContents.send("load");
@@ -73,7 +73,7 @@ ipcMain.on("patient:add", (e, doc) => {
     addPatientWindow.show()
   })
   addPatientWindow.on("close", (evt) => {
-    evt.preventDefault();    
+    evt.preventDefault();
     addPatientWindow.hide();
     addPatientWindow = null;
   });

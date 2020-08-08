@@ -48,7 +48,7 @@
             </div>
             <div id="rightPanel" class="col-sm-9 col-md-9 col-lg-9">
                 <div>
-                    <label>Age: </label>
+                    <label>Date of birth: </label>
                     <b id="age"></b>
                 </div>
                 <div>
@@ -150,30 +150,32 @@
 
 
         function creatTableRow(doc) {
-            const tr = document.createElement('tr');
-            console.log(doc._id)
-            tr.id = doc._id
-            const td = document.createElement('td');
-            const tdName = document.createElement('h5');
-            const tdPhone = document.createElement('h6');
-            const tdx = document.createElement('td')
-            const itemName = document.createTextNode(doc.name);
-            const itemPhone = document.createTextNode(doc.phone);
-            const x = document.createTextNode('x')
-            const btn = document.createElement('button')
-            btn.classList.add('x')
-            tdx.appendChild(btn)
-            btn.addEventListener('click', deletePatient)
+            try {
+                const tr = document.createElement('tr');
+                console.log(doc._id)
+                tr.id = doc._id
+                const td = document.createElement('td');
+                const tdName = document.createElement('h5');
+                const tdPhone = document.createElement('h6');
+                const tdx = document.createElement('td')
+                const itemName = document.createTextNode(doc.name);
+                const itemPhone = document.createTextNode(doc.phone);
+                const x = document.createTextNode('x')
+                const btn = document.createElement('button')
+                btn.classList.add('x')
+                tdx.appendChild(btn)
+                btn.addEventListener('click', deletePatient)
 
-            tdName.appendChild(itemName);
-            tdPhone.appendChild(itemPhone);
-            td.appendChild(tdName)
-            td.appendChild(tdPhone)
-            tr.appendChild(td);
-            tr.appendChild(tdx);
-            td.addEventListener('click', select)
+                tdName.appendChild(itemName);
+                tdPhone.appendChild(itemPhone);
+                td.appendChild(tdName)
+                td.appendChild(tdPhone)
+                tr.appendChild(td);
+                tr.appendChild(tdx);
+                td.addEventListener('click', select)
 
-            return tr
+                return tr
+            } catch (error) { }
         }
 
         function visitAdded(visit) {
@@ -209,7 +211,6 @@
 
             } catch (error) {
                 console.log(error)
-
             }
             return visit.due
         }
@@ -217,17 +218,19 @@
 
         async function addTableRows() {
             const tbody = document.querySelector('#tbody');
-            await db.find({
-                selector: {
-                    name: { $gte: null }
-                },
-                sort: ['name'],
-            }).then(result => {
-                result.docs.forEach(doc => {
-                    tr = creatTableRow(doc)
-                    tbody.appendChild(tr)
-                });
-            })
+            try {
+                await db.find({
+                    selector: {
+                        name: { $gte: null }
+                    },
+                    sort: ['name'],
+                }).then(result => {
+                    result.docs.forEach(doc => {
+                        tr = creatTableRow(doc)
+                        tbody.appendChild(tr)
+                    });
+                })
+            } catch (error) { }
         }
 
         function addPatient(e) {
@@ -235,118 +238,132 @@
         }
 
         ipcRenderer.on('patient:add', (e, doc) => {
-            db.put(doc, function (err, response) {
-                if (err) {
-                } else {
-                    if (document.getElementById(doc._id) == null) {
-                        db.find({
-                            selector: {
-                                name: { $gte: null }
-                            },
-                            sort: ['name'],
-                        }).then(result => {
-                            index = findWithAttr(result.docs, '_id', doc._id)
-                            console.log(index)
-                            try {
-                                row = document.getElementById(result.docs[index - 1]._id)
-                                row.after(creatTableRow(doc))
-                            } catch (error) {
-                                row = document.getElementById(result.docs[index + 1]._id)
-                                row.parentNode.insertBefore(creatTableRow(doc), row)
-                            }
+            try {
+                db.put(doc, function (err, response) {
+                    if (err) {
+                    } else {
+                        if (document.getElementById(doc._id) == null) {
+                            db.find({
+                                selector: {
+                                    name: { $gte: null }
+                                },
+                                sort: ['name'],
+                            }).then(result => {
+                                try {
+                                    index = findWithAttr(result.docs, '_id', doc._id)
+                                    console.log(index)
+                                    try {
+                                        row = document.getElementById(result.docs[index - 1]._id)
+                                        row.after(creatTableRow(doc))
+                                    } catch (error) {
+                                        row = document.getElementById(result.docs[index + 1]._id)
+                                        row.parentNode.insertBefore(creatTableRow(doc), row)
+                                    }
+                                } catch (error) {
+                                    tbody.appendChild(creatTableRow(doc))
+                                }
 
-                        })
+
+                            })
+                        }
+                        else {
+                            select(null, document.getElementById(doc._id))
+                        }
                     }
-                    else {
-                        select(null, document.getElementById(doc._id))
-                    }
-                }
-            })
+                })
+            } catch (error) { }
         })
 
         async function deletePatient() {
-            row = event.target.parentNode.parentNode
-            id = row.id
-            row.remove()
             try {
+                row = event.target.parentNode.parentNode
+                id = row.id
+                row.remove()
                 await db.get(id).then(doc => {
                     return db.remove(doc);
                 });
-            } catch (error) {
-            }
+                if (selected == id) select(null, -1)
+            } catch (error) { }
         }
 
         async function editPatient(e) {
-            await db.find({
-                selector: {
-                    _id: selected
-                }
-            }).then(result => {
-                doc = result.docs[0]
-                ipcRenderer.send('patient:add', doc);
-            })
-        }
-
-        async function addVisit() {
-            if (selected == null) {
-                const options = {
-                    type: 'info',
-                    buttons: ['Ok'],
-                    defaultId: 0,
-                    title: 'No patient selected',
-                    message: 'Please select a patient!'
-                };
-
-                dialog.showMessageBox(null, options, (response) => {
-                    console.log(response);
-                });
-            }
-            else {
+            try {
                 await db.find({
                     selector: {
                         _id: selected
                     }
                 }).then(result => {
                     doc = result.docs[0]
-                    ipcRenderer.send('visit:add', doc);
+                    ipcRenderer.send('patient:add', doc);
                 })
-            }
+            } catch (error) { }
+        }
+
+        async function addVisit() {
+            try {
+                if (selected == null) {
+                    const options = {
+                        type: 'info',
+                        buttons: ['Ok'],
+                        defaultId: 0,
+                        title: 'No patient selected',
+                        message: 'Please select a patient!'
+                    };
+
+                    dialog.showMessageBox(null, options, (response) => {
+                        console.log(response);
+                    });
+                }
+                else {
+                    await db.find({
+                        selector: {
+                            _id: selected
+                        }
+                    }).then(result => {
+                        doc = result.docs[0]
+                        ipcRenderer.send('visit:add', doc);
+                    })
+                }
+            } catch (error) { }
         }
 
         ipcRenderer.on('visit:add', (e, doc) => {
-            db.put(doc, function (err, response) {
-                if (err) {
-                } else {
-                    select(null, document.getElementById(doc._id))
-                }
-            })
+            try {
+                db.put(doc, function (err, response) {
+                    if (err) {
+                    } else {
+                        select(null, document.getElementById(doc._id))
+                    }
+                })
+            } catch (error) { }
         })
 
         async function editVisit(e) {
-            var divs = visitDiv.querySelectorAll('.hoverable')
-            var divsArray = Array.from(divs);
-            div = divsArray.filter(div => div.contains(event.target))[0];
-            await db.find({
-                selector: {
-                    _id: selected
-                }
-            }).then(result => {
+            try {
+                var divs = visitDiv.querySelectorAll('.hoverable')
+                var divsArray = Array.from(divs);
+                div = divsArray.filter(div => div.contains(event.target))[0];
+                await db.find({
+                    selector: {
+                        _id: selected
+                    }
+                }).then(result => {
 
-                doc = result.docs[0]
-                visit = doc.visits.find(visit => { return visit._id == div.id })
-                console.log(visit)
-                ipcRenderer.send('visit:add', doc, visit);
-            })
+                    doc = result.docs[0]
+                    visit = doc.visits.find(visit => { return visit._id == div.id })
+                    console.log(visit)
+                    ipcRenderer.send('visit:add', doc, visit);
+                })
+            } catch (error) { }
         }
 
 
 
         async function visitClick(e) {
-            row = event.target.parentNode
-            id = row.id
-            row.remove()
-
             try {
+                row = event.target.parentNode
+                id = row.id
+                row.remove()
                 await db.find({
                     selector: {
                         _id: selected
@@ -363,23 +380,37 @@
                         }
                     });
                 });
-            } catch (error) {
-            }
+            } catch (error) { }
         }
 
 
         function select(e, row) {
-            var rows = document.querySelectorAll("tr");
-            var rowsArray = Array.from(rows);
             try {
-                table.querySelector('.selected').classList.remove('selected');
+                if (row == -1) {
+                    selected = -1
+                    document.querySelector('#name').innerHTML = '';
+                    document.querySelector('#age').innerHTML = '';
+                    document.querySelector('#phone').innerHTML = '';
+                    document.querySelector('#complaint').innerHTML = '';
+                    document.querySelector('#medical').innerHTML = '';
+                    document.querySelector('#dental').innerHTML = '';
+                    document.querySelector('#notes').innerHTML = '';
+                    document.querySelector('#visitDiv').innerHTML = ''
+                    document.querySelector("#dueTotal").innerHTML = ''
+                }
+                var rows = document.querySelectorAll("tr");
+                var rowsArray = Array.from(rows);
+                try {
+                    table.querySelector('.selected').classList.remove('selected');
+                } catch (error) { }
+                if (row == null) {
+                    selectedRow = rowsArray.filter(row => row.contains(event.target))[0]
+                }
+                selectedRow.classList.add('selected')
+                selected = selectedRow.id
+                showSelected(selectedRow.id)
+
             } catch (error) { }
-            if (row == null) {
-                selectedRow = rowsArray.filter(row => row.contains(event.target))[0]
-            }
-            selectedRow.classList.add('selected')
-            selected = selectedRow.id
-            showSelected(selectedRow.id)
         }
 
 
@@ -392,7 +423,7 @@
                 }).then(result => {
                     doc = result.docs[0]
                     document.querySelector('#name').innerHTML = doc.name;
-                    document.querySelector('#age').innerHTML = doc.age;
+                    document.querySelector('#age').innerHTML = formatter.format(new Date(doc.age));
                     document.querySelector('#phone').innerHTML = doc.phone;
                     document.querySelector('#complaint').innerHTML = doc.complaint;
                     document.querySelector('#medical').innerHTML = doc.medicalHistory;
@@ -410,6 +441,8 @@
                     dueTotal.innerHTML = totalDue
                 })
             } catch (error) {
+                // console.log(formatter.format(new Date(doc.date)))
+                console.log(error)
             }
         }
 
