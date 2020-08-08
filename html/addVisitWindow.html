@@ -16,7 +16,6 @@
                     <div id="title" style="margin-bottom: 20px;">
                         <h5>Add Visit</h5>
                     </div>
-                    <!-- <div class="dropdown-divider"></div> -->
                     <div id="top">
                         <div>
                             <label>Date *</label>
@@ -39,27 +38,6 @@
                             <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
                                 id="paid" autofocus>
                         </div>
-                        <!-- <div>
-                            <label>Description</label>
-                        </div> -->
-                        <!-- <div>
-                            <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
-                                id="complaint" autofocus>
-                        </div> -->
-                        <!-- <div>
-                            <label>Medical history</label>
-                        </div>
-                        <div>
-                            <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
-                                id="medicalHistory" autofocus>
-                        </div>
-                        <div>
-                            <label>Dental History</label>
-                        </div>
-                        <div>
-                            <input type="text" class="form-control oneSize" aria-describedby="inputGroup-sizing-sm"
-                                id="dentalHistory" autofocus>
-                        </div> -->
                         <div>
                             <label>Description</label>
                         </div>
@@ -95,7 +73,6 @@
 
         ipcRenderer.on('selected:send', (e, doc) => {
             selected = doc
-            // console.log(selected)
         })
 
         ipcRenderer.on('visit:edit', (e, visit) => {
@@ -112,9 +89,6 @@
             document.querySelector('#cost').value = visit.cost;
             document.querySelector('#paid').value = visit.paid;
             document.querySelector('#description').value = visit.description;
-            // document.querySelector('#medicalHistory').value = visit.medicalHistory;
-            // document.querySelector('#dentalHistory').value = visit.dentalHistory;
-            // document.querySelector('#notes').value = visit.notes;
         })
 
         function submitForm(e) {
@@ -127,13 +101,10 @@
                 if (date == "Invalid Date" || isNaN(date) || date == null) {
                     throw error;
                 }
-                const cost = document.querySelector('#cost').value;
-                const paid = document.querySelector('#paid').value;
+                const cost = (document.querySelector('#cost').value != '' ? document.querySelector('#cost').value : '0');
+                const paid = (document.querySelector('#paid').value != '' ? document.querySelector('#paid').value : '0');
                 const due = parseFloat(document.querySelector('#cost').value) - parseFloat(document.querySelector('#paid').value);
                 const description = document.querySelector('#description').value;
-                // const dentalHistory = document.querySelector('#dentalHistory').value;
-                // const notes = document.querySelector('#notes').value;
-                // var visits = []
                 var visit =
                 {
                     "_id": uuidv4(),
@@ -142,7 +113,6 @@
                     "paid": paid,
                     "due": due,
                     "description": description
-                    // "visits": visits
                 }
                 if (selectedVisit != null) {
                     selected.visits.forEach(visit => {
@@ -155,21 +125,17 @@
                 selected.visits.sort(function (a, b) {
                     return b.date - a.date
                 })
-                // console.log(selected)
-                ipcRenderer.send('visit:added', selected, visit);
+                ipcRenderer.send('visit:added', selected);
             } catch (error) {
+
                 const options = {
                     type: 'warning',
                     buttons: ['Ok'],
                     defaultId: 0,
                     title: 'Incorrect date format',
                     message: 'Please check the format of your date.'
-                    // detail: 'It does not really matter',
-                    // checkboxLabel: 'Remember my answer',
-                    // checkboxChecked: true,
                 };
                 dialog.showMessageBox(null, options, (response) => {
-                    // console.log(response);
                     return
                 });
             }
